@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AITV Points Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>AITV Points Tracker</h1>
+
+  <!-- Access Code (NO FORM) -->
+  <div id="access-gate">
+    <input type="password" id="accessCode" placeholder="Enter Access Code" required />
+    <button id="submitCode">Enter</button>
+  </div>
+
+  <!-- Main Form -->
+  <div id="main-content" style="display: none;">
+    <form id="points-form">
+      <input type="text" id="username" placeholder="Enter Username" required />
+      <select id="activity" required>
+        <option value="">-- Select Activity --</option>
+        <option value="watch">Watched 10+ minutes</option>
+        <option value="engage">Liked/Reply/Repost</option>
+        <option value="watchPartyMsg">Watch Party Message (X)</option>
+        <option value="inAppMsg">In-App Message (Watch Party)</option>
+        <option value="postContent">Posted Content (Tweet/TikTok/Insta)</option>
+        <option value="inviteFriends">Invited 2+ Friends</option>
+      </select>
+      <button type="submit">Add Points</button>
+    </form>
+
+    <h2>Leaderboard</h2>
+    <table id="leaderboard">
+      <thead>
+  <tr><th>Username</th><th>Points</th><th>Delete</th></tr>
+</thead>
+
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+
+
