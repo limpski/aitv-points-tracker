@@ -1,9 +1,9 @@
 console.log("✅ script.js loaded");
 
+// Supabase config
 const supabaseUrl = "https://gkzclqflgrwexvxpsyig.supabase.co";
-const supabaseKey = "your-supabase-anon-key-here"; // Replace with actual anon key if you're still doing local dev
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdremNscWZsZ3J3ZXh2eHBzeWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NzEwMDEsImV4cCI6MjA2MjA0NzAwMX0.swjEIqe8EvCd1_3l_fXyoGmyxWiErkH0b5t-q8cNkgg";
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
 console.log("✅ Supabase initialized");
 
 const accessGate = document.getElementById("access-gate");
@@ -17,10 +17,10 @@ const taskPoints = {
   watchPartyMsg: 1,
   inAppMsg: 1,
   postContent: 2,
-  inviteFriends: 2,
+  inviteFriends: 2
 };
 
-// 🔐 Access Gate
+// Access code logic
 document.getElementById("submitCode").addEventListener("click", () => {
   const enteredCode = document.getElementById("accessCode").value.trim();
   console.log("🔐 Access code entered:", enteredCode);
@@ -36,7 +36,7 @@ document.getElementById("submitCode").addEventListener("click", () => {
   }
 });
 
-// ➕ Add Points
+// Add points
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const username = document.getElementById("username").value.trim().toLowerCase();
@@ -63,30 +63,22 @@ form.addEventListener("submit", async (e) => {
 
   if (existingUser) {
     console.log("🔁 User exists, updating points...");
-    const { error: updateError } = await supabaseClient
+    await supabaseClient
       .from("users")
       .update({ points: existingUser.points + points })
       .eq("username", username);
-
-    if (updateError) {
-      console.error("❌ Update error:", updateError);
-    }
   } else {
     console.log("🆕 New user, inserting...");
-    const { error: insertError } = await supabaseClient
+    await supabaseClient
       .from("users")
       .insert([{ username, points }]);
-
-    if (insertError) {
-      console.error("❌ Insert error:", insertError);
-    }
   }
 
   form.reset();
   loadLeaderboard();
 });
 
-// 📊 Load Leaderboard
+// Load leaderboard
 async function loadLeaderboard() {
   console.log("📊 Loading leaderboard...");
   const { data: users, error } = await supabaseClient
@@ -105,32 +97,30 @@ async function loadLeaderboard() {
     row.innerHTML = `
       <td>${username}</td>
       <td>${points}</td>
-      <td><button class="delete-btn" data-user="${username}">🗑️</button></td>
+      <td><button onclick="deleteUser('${username}')">Delete</button></td>
     `;
     leaderboardBody.appendChild(row);
   });
   console.log("✅ Leaderboard updated");
 }
 
-// 🗑️ Delete User Button
-document.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("delete-btn")) {
-    const username = e.target.dataset.user;
-    const confirmDelete = confirm(`Delete user "${username}"?`);
-    if (!confirmDelete) return;
+// Delete user
+async function deleteUser(username) {
+  const confirmDelete = confirm(`Are you sure you want to delete "${username}"?`);
+  if (!confirmDelete) return;
 
-    const { error } = await supabaseClient
-      .from("users")
-      .delete()
-      .eq("username", username);
+  const { error } = await supabaseClient
+    .from("users")
+    .delete()
+    .eq("username", username);
 
-    if (error) {
-      console.error("❌ Delete error:", error);
-      alert("Could not delete user.");
-    } else {
-      console.log(`🗑️ Deleted user: ${username}`);
-      loadLeaderboard();
-    }
+  if (error) {
+    console.error("❌ Failed to delete user:", error);
+    alert("Error deleting user.");
+  } else {
+    console.log(`🗑️ Deleted user: ${username}`);
+    loadLeaderboard();
   }
-});
+}
+
 
