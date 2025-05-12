@@ -1,11 +1,8 @@
-// Make sure this is loaded AFTER supabase-js in your HTML
-const { createClient } = supabase;
-const supabaseClient = createClient(
+const supabase = window.supabase.createClient(
   "https://gkzclqflgrwexvxpsyig.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdremNscWZsZ3J3ZXh2eHBzeWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NzEwMDEsImV4cCI6MjA2MjA0NzAwMX0.swjEIqe8EvCd1_3l_fXyoGmyxWiErkH0b5t-q8cNkgg" // your anon key
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdremNscWZsZ3J3ZXh2eHBzeWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NzEwMDEsImV4cCI6MjA2MjA0NzAwMX0.swjEIqe8EvCd1_3l_fXyoGmyxWiErkH0b5t-q8cNkgg"
 );
 
-// Activity point values
 const activityPoints = {
   xEngagement: 1,
   watchStream: 2,
@@ -14,7 +11,6 @@ const activityPoints = {
   watchPartyPrompt: 2
 };
 
-// Access gate
 document.getElementById("submitCode").addEventListener("click", () => {
   const code = document.getElementById("accessCode").value;
   if (code === "aitv2025") {
@@ -26,7 +22,6 @@ document.getElementById("submitCode").addEventListener("click", () => {
   }
 });
 
-// Handle form submission
 document.getElementById("points-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -40,14 +35,14 @@ document.getElementById("points-form").addEventListener("submit", async (e) => {
 
   const points = activityPoints[activity];
 
-  const { data: existingUser } = await supabaseClient
+  const { data: existingUser } = await supabase
     .from("users")
     .select("*")
     .eq("username", username)
     .single();
 
   if (existingUser) {
-    const { error } = await supabaseClient
+    const { error } = await supabase
       .from("users")
       .update({ points: existingUser.points + points })
       .eq("username", username);
@@ -57,7 +52,7 @@ document.getElementById("points-form").addEventListener("submit", async (e) => {
       console.error(error);
     }
   } else {
-    const { error } = await supabaseClient
+    const { error } = await supabase
       .from("users")
       .insert({ username, points });
 
@@ -71,9 +66,8 @@ document.getElementById("points-form").addEventListener("submit", async (e) => {
   document.getElementById("points-form").reset();
 });
 
-// Load and display leaderboard
 async function loadLeaderboard() {
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("users")
     .select("username, points")
     .order("points", { ascending: false });
@@ -97,11 +91,10 @@ async function loadLeaderboard() {
   });
 }
 
-// Delete user
 async function deleteUser(username) {
   if (!confirm(`Delete user "${username}"?`)) return;
 
-  const { error } = await supabaseClient
+  const { error } = await supabase
     .from("users")
     .delete()
     .eq("username", username);
@@ -113,4 +106,5 @@ async function deleteUser(username) {
     loadLeaderboard();
   }
 }
+
 
