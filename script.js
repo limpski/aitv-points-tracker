@@ -1,23 +1,11 @@
-// Initialize Supabase client
-const supabase = supabase.createClient(
+// Make sure this is loaded AFTER supabase-js in your HTML
+const { createClient } = supabase;
+const supabaseClient = createClient(
   "https://gkzclqflgrwexvxpsyig.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdremNscWZsZ3J3ZXh2eHBzeWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NzEwMDEsImV4cCI6MjA2MjA0NzAwMX0.swjEIqe8EvCd1_3l_fXyoGmyxWiErkH0b5t-q8cNkgg"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdremNscWZsZ3J3ZXh2eHBzeWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NzEwMDEsImV4cCI6MjA2MjA0NzAwMX0.swjEIqe8EvCd1_3l_fXyoGmyxWiErkH0b5t-q8cNkgg" // your anon key
 );
 
-
-// Access code gate
-document.getElementById('submitCode').addEventListener('click', () => {
-  const code = document.getElementById('accessCode').value;
-  if (code === 'aitv2025') {
-    document.getElementById('access-gate').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-    loadLeaderboard();
-  } else {
-    alert('Incorrect access code');
-  }
-});
-
-// Define point values for each activity
+// Activity point values
 const activityPoints = {
   xEngagement: 1,
   watchStream: 2,
@@ -26,92 +14,103 @@ const activityPoints = {
   watchPartyPrompt: 2
 };
 
-// Form submit handler
-document.getElementById('points-form').addEventListener('submit', async (e) => {
+// Access gate
+document.getElementById("submitCode").addEventListener("click", () => {
+  const code = document.getElementById("accessCode").value;
+  if (code === "aitv2025") {
+    document.getElementById("access-gate").style.display = "none";
+    document.getElementById("main-content").style.display = "block";
+    loadLeaderboard();
+  } else {
+    alert("Invalid access code");
+  }
+});
+
+// Handle form submission
+document.getElementById("points-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const username = document.getElementById('username').value.trim().toLowerCase();
-  const activity = document.getElementById('activity').value;
-  const points = activityPoints[activity];
+  const username = document.getElementById("username").value.trim();
+  const activity = document.getElementById("activity").value;
 
-  if (!username || !points) {
-    alert('Please enter a username and select an activity.');
+  if (!username || !activity || !activityPoints[activity]) {
+    alert("Please enter a username and select an activity");
     return;
   }
 
-  const { data: existing, error: fetchError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('username', username)
+  const points = activityPoints[activity];
+
+  const { data: existingUser } = await supabaseClient
+    .from("users")
+    .select("*")
+    .eq("username", username)
     .single();
 
-  if (fetchError && fetchError.code !== 'PGRST116') {
-    console.error('Fetch error:', fetchError);
-    return alert('Error checking user.');
-  }
+  if (existingUser) {
+    const { error } = await supabaseClient
+      .from("users")
+      .update({ points: existingUser.points + points })
+      .eq("username", username);
 
-  if (existing) {
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ points: existing.points + points })
-      .eq('username', username);
-
-    if (updateError) {
-      console.error(updateError);
-      return alert('Error updating points.');
+    if (error) {
+      alert("Error updating points");
+      console.error(error);
     }
   } else {
-    const { error: insertError } = await supabase
-      .from('users')
+    const { error } = await supabaseClient
+      .from("users")
       .insert({ username, points });
 
-    if (insertError) {
-      console.error(insertError);
-      return alert('Error inserting user.');
+    if (error) {
+      alert("Error adding new user");
+      console.error(error);
     }
   }
 
-  document.getElementById('points-form').reset();
   loadLeaderboard();
+  document.getElementById("points-form").reset();
 });
 
-// Load leaderboard
+// Load and display leaderboard
 async function loadLeaderboard() {
-  const { data, error } = await supabase
-    .from('users')
-    .select('username, points')
-    .order('points', { ascending: false });
+  const { data, error } = await supabaseClient
+    .from("users")
+    .select("username, points")
+    .order("points", { ascending: false });
 
   if (error) {
-    console.error(error);
-    return alert('Error loading leaderboard.');
+    console.error("Error loading leaderboard:", error);
+    return;
   }
 
-  const tbody = document.querySelector('#leaderboard tbody');
-  tbody.innerHTML = '';
-  data.forEach(user => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
+  const tbody = document.querySelector("#leaderboard tbody");
+  tbody.innerHTML = "";
+
+  data.forEach((user) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
       <td>${user.username}</td>
       <td>${user.points}</td>
-      <td><button onclick="deleteUser('${user.username}')">Delete</button></td>
+      <td><button onclick="deleteUser('${user.username}')">❌</button></td>
     `;
-    tbody.appendChild(row);
+    tbody.appendChild(tr);
   });
 }
 
 // Delete user
 async function deleteUser(username) {
   if (!confirm(`Delete user "${username}"?`)) return;
-  const { error } = await supabase
-    .from('users')
-    .delete()
-    .eq('username', username);
-  if (error) {
-    console.error(error);
-    return alert('Error deleting user.');
-  }
-  loadLeaderboard();
-}
 
+  const { error } = await supabaseClient
+    .from("users")
+    .delete()
+    .eq("username", username);
+
+  if (error) {
+    alert("Error deleting user");
+    console.error(error);
+  } else {
+    loadLeaderboard();
+  }
+}
 
